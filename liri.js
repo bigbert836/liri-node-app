@@ -1,17 +1,21 @@
+//require the necessary npm's
 var Twitter = require('twitter');
 var Spotify = require('node-spotify-api');
 var request = require('request');
 var fs = require("fs");
 
+// global variables created
 var search = "";
 var dataArr = [];
 
+// function to set the search variable
 function npmSearch(){
 	for(var i = 3; i < process.argv.length; i++){
 		search = search + process.argv[i] + " ";
 	}
 }
- 
+
+// function to post the last 20 tweets 
 function postTweets(){
 	var keysForTwitter = require('./keys.js')
 	var client = new Twitter({
@@ -23,18 +27,25 @@ function postTweets(){
 	var params = {screen_name: 'bigbert836'};
 	client.get('statuses/user_timeline', params, function(error, tweets, response){
   		if (!error) {
+  			// appends data to log.txt
+  			fs.appendFile("log.txt", "My last 20 tweets:\n")
+  			// loop through the last 20 twwets
   			for(var i = 0; i < 20; i++){
 	    		console.log("On " + tweets[i].created_at + " GMT");
 	    		console.log(tweets[i].user.name + " tweeted:");
 	    		console.log("'" + tweets[i].text + "'");
 	    		console.log(" ");
+	    		// appends data to log.txt
+	    		fs.appendFile("log.txt", "On " + tweets[i].created_at + " GMT\n" + tweets[i].user.name + " tweeted:\n'" + tweets[i].text + "'\n\n");
 	    	}
   		}
 	});
 }
 
+// function to search Spotify for songs
 function songSearch(){
 	if(search === ""){
+		// if no search parameter is given then it defaults to "The Sign" by Ace of Base
 		search = "The Sign Ace of Base";
 	}
 	var spotify = new Spotify({
@@ -49,11 +60,15 @@ function songSearch(){
 		console.log("Track: " + data.tracks.items[0].name);
 		console.log("Preview: " + data.tracks.items[0].external_urls.spotify);
 		console.log("Album: " + data.tracks.items[0].album.name);
-	});
+		// appends data to log.txt
+		fs.appendFile("log.txt", "Song Search: " + search + "\nArtist: " + data.tracks.items[0].artists[0].name + "\nTrack: " + data.tracks.items[0].name + "\nPreview: " + data.tracks.items[0].external_urls.spotify + "\nAlbum: " + data.tracks.items[0].album.name + "\n\n");
+	})
 }
 
+// function to search imdb for movies
 function movieSearch(){
 	if(search === ""){
+		// if no search parameter is given then it defaults to "Mr. Nobody"
 		search = "Mr. Nobody";
 	}
 	var queryUrl = "http://www.omdbapi.com/?t=" + search + "&y=&plot=short&apikey=trilogy";
@@ -67,10 +82,13 @@ function movieSearch(){
 			console.log("Language: " + JSON.parse(body).Language);
 			console.log("Plot: " + JSON.parse(body).Plot);
 			console.log("Actors: " + JSON.parse(body).Actors);
+			// appends data to log.txt
+			fs.appendFile("log.txt", "Movie Search: " + search +"\nTitle: " + JSON.parse(body).Title + "\nReliese Year: " + JSON.parse(body).Year + "\nIMDB Rating: " + JSON.parse(body).Ratings[0].Value + "\nRotten Tomatoes Rating: " + JSON.parse(body).Ratings[1].Value + "\nCountry of Production: " + JSON.parse(body).Country + "\nLanguage: " + JSON.parse(body).Language + "\nPlot: " + JSON.parse(body).Plot + "\nActors: " + JSON.parse(body).Actors + "\n\n")
 		}
 	});
 }
 
+// function to read text from random.txt and tehn execute the particular function
 function readTextFile(){
 	fs.readFile("./random.txt", "utf8", function(error, data){
 		if (error) {
@@ -79,14 +97,18 @@ function readTextFile(){
   			dataArr = data.split(",");
   		}
 		search = dataArr[1];
+		//  condition run a particular funcction based on the first index of the array
 		if(dataArr[0] === "spotify-this-song"){
 			songSearch();
 		} else if(dataArr[0] === "movie-this"){
 			movieSearch();
+		} else if(dataArr[0] === "my-tweets"){
+			postTweets();
 		}
 	})
 }
 
+//  condition run a particular funcction based on the 3rd argument in the command line
 if(process.argv[2] === "spotify-this-song"){
 	npmSearch();
 	songSearch();
